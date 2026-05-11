@@ -341,7 +341,7 @@
       document.getElementById('sidebar').classList.add('hidden');
       // Cargar iframe solo la primera vez
       if (!iframesLoaded['tracker']) {
-        document.getElementById('tracker-frame').src = 'https://larocca-tracker.vercel.app';
+        document.getElementById('tracker-frame').src = 'https://larocca-tracker.vercel.app/?desktop=1';
         iframesLoaded['tracker'] = true;
       }
     }
