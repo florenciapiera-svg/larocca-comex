@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Larocca · KPIs Comex</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Barlow',sans-serif;background:#F4F4F4;color:#111;min-height:100vh}
+
+    /* TOPBAR */
+    #topbar{background:#CC0000;height:48px;display:flex;align-items:center;padding:0 24px;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+    .logo-line{width:3px;height:28px;background:rgba(255,255,255,.35);border-radius:2px}
+    .logo-sub{font-family:'DM Mono',monospace;font-size:7px;color:rgba(255,255,255,.55);letter-spacing:3px}
+    .logo-main{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff;letter-spacing:1px;line-height:1}
+    .top-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+    .top-badge{font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:3px 8px}
+    #sync-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:5px 12px;font-family:'DM Mono',monospace;font-size:9px;font-weight:700;color:#fff;cursor:pointer;letter-spacing:.5px;transition:background .12s}
+    #sync-btn:hover{background:rgba(255,255,255,.25)}
+    #sync-status{font-family:'DM Mono',monospace;font-size:9px;color:rgba(255,255,255,.6)}
+
+    /* FILTROS */
+    #filtros{background:#fff;border-bottom:1px solid #E8E8E8;padding:12px 24px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:48px;z-index:99}
+    .filtro-label{font-family:'DM Mono',monospace;font-size:8px;color:#999;letter-spacing:1px;text-transform:uppercase}
+    select,#buscar{padding:5px 10px;border:1px solid #E8E8E8;border-radius:6px;font-family:'DM Mono',monospace;font-size:11px;color:#333;background:#F7F7F7;cursor:pointer}
+    select:focus,#buscar:focus{outline:none;border-color:#CC0000}
+    #buscar{width:180px}
+    .filtro-sep{width:1px;height:20px;background:#E8E8E8}
+
+    /* CONTENT */
+    #content{padding:20px 24px;max-width:1400px;margin:0 auto}
+
+    /* SECCIÓN */
+    .section-title{font-family:'DM Mono',monospace;font-size:9px;color:#999;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;margin-top:24px;padding-bottom:6px;border-bottom:1px solid #E8E8E8}
+    .section-title:first-child{margin-top:0}
+
+    /* KPI CARDS */
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:4px}
+    .kpi-card{background:#fff;border:1px solid #E8E8E8;border-radius:10px;padding:14px 16px;border-top:3px solid #E8E8E8}
+    .kpi-card.red{border-top-color:#CC0000}
+    .kpi-card.blue{border-top-color:#1D4ED8}
+    .kpi-card.green{border-top-color:#22C55E}
+    .kpi-card.orange{border-top-color:#F97316}
+    .kpi-card.yellow{border-top-color:#EAB308}
+    .kpi-label{font-family:'DM Mono',monospace;font-size:8px;color:#999;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+    .kpi-value{font-family:'Bebas Neue',sans-serif;font-size:28px;color:#111;line-height:1;letter-spacing:.5px}
+    .kpi-sub{font-size:10px;color:#AAA;margin-top:3px;font-family:'DM Mono',monospace}
+
+    /* CHARTS GRID */
+    .charts-grid{display:grid;gap:14px}
+    .charts-2{grid-template-columns:1fr 1fr}
+    .charts-3{grid-template-columns:1fr 1fr 1fr}
+    .charts-1{grid-template-columns:1fr}
+
+    .chart-card{background:#fff;border:1px solid #E8E8E8;border-radius:10px;padding:16px}
+    .chart-title{font-family:'DM Mono',monospace;font-size:9px;color:#666;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;font-weight:700}
+    .chart-wrap{position:relative}
+
+    /* TABLA RANKING */
+    .rank-table{width:100%;border-collapse:collapse}
+    .rank-table th{font-family:'DM Mono',monospace;font-size:8px;color:#999;letter-spacing:1px;text-transform:uppercase;padding:6px 8px;text-align:left;border-bottom:1px solid #F0F0F0;font-weight:500}
+    .rank-table td{padding:8px 8px;font-size:12px;color:#333;border-bottom:1px solid #F7F7F7;vertical-align:middle}
+    .rank-table tr:last-child td{border-bottom:none}
+    .rank-table tr:hover td{background:#F7F7F7}
+    .rank-num{font-family:'DM Mono',monospace;font-size:10px;color:#CCC;font-weight:700;width:24px}
+    .rank-bar-wrap{height:4px;background:#F0F0F0;border-radius:2px;margin-top:4px}
+    .rank-bar{height:4px;border-radius:2px;background:#CC0000;transition:width .5s ease}
+    .rank-bar.blue{background:#1D4ED8}
+    .rank-bar.green{background:#22C55E}
+    .rank-usd{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:#111;white-space:nowrap}
+
+    /* CANAL PILLS */
+    .canal-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-family:'DM Mono',monospace;font-size:10px;font-weight:700}
+    .canal-verde{background:#F0FFF4;color:#15803D;border:1px solid #22C55E44}
+    .canal-naranja{background:#FFF7ED;color:#C2410C;border:1px solid #F9731644}
+    .canal-rojo{background:#FFF5F5;color:#CC0000;border:1px solid #CC000044}
+    .canal-nd{background:#F7F7F7;color:#999;border:1px solid #E8E8E8}
+
+    /* EMPTY */
+    .empty{text-align:center;padding:40px;color:#CCC;font-family:'DM Mono',monospace;font-size:11px}
+
+    /* LOADING */
+    #loading{position:fixed;inset:0;background:rgba(255,255,255,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:12px}
+    .spinner{width:32px;height:32px;border:2px solid #E8E8E8;border-top-color:#CC0000;border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading-text{font-family:'DM Mono',monospace;font-size:10px;color:#999;letter-spacing:1px}
+    #loading.hidden{display:none}
+  </style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">CARGANDO DATOS...</div>
+</div>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo-line"></div>
+  <div>
+    <div class="logo-sub">Larocca · Comex</div>
+    <div class="logo-main">KPIs & ANÁLISIS</div>
+  </div>
+  <div class="top-right">
+    <span id="sync-status"></span>
+    <button id="sync-btn" onclick="cargarDatos()">↻ ACTUALIZAR</button>
+    <span class="top-badge" id="total-ops">— ops.</span>
+  </div>
+</div>
+
+<!-- FILTROS -->
+<div id="filtros">
+  <span class="filtro-label">Filtros</span>
+  <select id="f-year" onchange="renderAll()">
+    <option value="TODOS">Todos los años</option>
+  </select>
+  <select id="f-empresa" onchange="renderAll()">
+    <option value="TODAS">Todas las empresas</option>
+    <option value="LAROCCA NEUMATICOS S.A.">L. Neumáticos</option>
+    <option value="LAROCCA SALTA NEUMATICOS S.A.">L. Salta</option>
+    <option value="LAROCCA MINERIA S.A.">L. Minería</option>
+  </select>
+  <select id="f-estado" onchange="renderAll()">
+    <option value="TODOS">Todos los estados</option>
+    <option value="activos">Solo activos</option>
+    <option value="historial">Solo historial</option>
+  </select>
+  <div class="filtro-sep"></div>
+  <span class="filtro-label">Período</span>
+  <select id="f-periodo" onchange="renderAll()">
+    <option value="mes">Por mes</option>
+    <option value="trimestre">Por trimestre</option>
+    <option value="año">Por año</option>
+  </select>
+</div>
+
+<!-- CONTENT -->
+<div id="content">
+
+  <!-- KPIs PRINCIPALES -->
+  <div class="section-title">Resumen general</div>
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <!-- VOLUMEN -->
+  <div class="section-title">Volumen de importaciones</div>
+  <div class="charts-grid charts-2">
+    <div class="chart-card">
+      <div class="chart-title">Cantidad de operaciones por período</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-ops"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">USD importado por período</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-usd"></canvas></div>
+    </div>
+  </div>
+
+  <!-- EMPRESA Y ORIGEN -->
+  <div class="section-title">Distribución por empresa y origen</div>
+  <div class="charts-grid charts-3">
+    <div class="chart-card">
+      <div class="chart-title">USD por empresa</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chart-empresa"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Operaciones por origen</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chart-origen"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Contenedores por terminal</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chart-terminal"></canvas></div>
+    </div>
+  </div>
+
+  <!-- RANKINGS -->
+  <div class="section-title">Rankings</div>
+  <div class="charts-grid charts-2">
+    <div class="chart-card">
+      <div class="chart-title">Top proveedores por USD importado</div>
+      <div id="rank-proveedores"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Forwarders — operaciones y tiempo promedio</div>
+      <div id="rank-forwarders"></div>
+    </div>
+  </div>
+
+  <!-- OPERATIVO -->
+  <div class="section-title">Análisis operativo</div>
+  <div class="charts-grid charts-3">
+    <div class="chart-card">
+      <div class="chart-title">Canal aduanero</div>
+      <div id="rank-canal"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Tiempo de tránsito promedio (días ETD→ETA)</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chart-transito"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Contenedores por período</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chart-cont"></canvas></div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:24px 0;font-family:'DM Mono',monospace;font-size:9px;color:#DDD" id="footer-info"></div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const APPS_SCRIPT_URL = 'https://larocca-tracker.vercel.app/api/sync';
+
+// ── ESTADO ────────────────────────────────────────────────────────────────────
+let allData   = [];
+let charts    = {};
+let lastSync  = '';
+
+// ── COLORES ───────────────────────────────────────────────────────────────────
+const PALETTE = ['#CC0000','#1D4ED8','#22C55E','#EAB308','#F97316','#8B5CF6','#EC4899','#14B8A6','#64748B','#F59E0B'];
+const EMP_COLOR = {
+  'LAROCCA NEUMATICOS S.A.':        '#22C55E',
+  'LAROCCA SALTA NEUMATICOS S.A.':  '#3B82F6',
+  'LAROCCA MINERIA S.A.':           '#EAB308',
+};
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+const fmtUSD  = n => 'USD ' + Math.abs(n).toLocaleString('es-AR',{maximumFractionDigits:0});
+const fmtNum  = n => Number(n).toLocaleString('es-AR',{maximumFractionDigits:0});
+const parseD  = s => { if(!s) return null; const p=s.split('/'); return p.length===3 ? new Date(`${p[2]}-${p[1]}-${p[0]}`) : new Date(s); };
+const getYear = s => { const d=parseD(s); return d&&!isNaN(d)?d.getFullYear():null; };
+const getMes  = s => { const d=parseD(s); return d&&!isNaN(d)?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`:null; };
+const getTrim = s => { const d=parseD(s); if(!d||isNaN(d)) return null; return `${d.getFullYear()} Q${Math.ceil((d.getMonth()+1)/3)}`; };
+const diffDias= (etd,eta) => { const d1=parseD(etd),d2=parseD(eta); if(!d1||!d2||isNaN(d1)||isNaN(d2)) return null; return Math.round((d2-d1)/86400000); };
+
+function getPeriodoKey(eta) {
+  const p = document.getElementById('f-periodo').value;
+  if (p==='mes')       return getMes(eta);
+  if (p==='trimestre') return getTrim(eta);
+  return getYear(eta) ? String(getYear(eta)) : null;
+}
+
+// ── FILTROS ───────────────────────────────────────────────────────────────────
+function getDatos() {
+  const year    = document.getElementById('f-year').value;
+  const empresa = document.getElementById('f-empresa').value;
+  const estado  = document.getElementById('f-estado').value;
+
+  const HIST = ['ENTREGADO','ENTREGADO A CLIENTE','CERRADO','NACIONALIZADO'];
+
+  return allData.filter(d => {
+    const y = getYear(d.ETA);
+    if (year !== 'TODOS' && String(y) !== year) return false;
+    if (empresa !== 'TODAS' && d.EMPRESA !== empresa) return false;
+    if (estado === 'activos'   && HIST.includes(d.ESTADO_NORMALIZADO)) return false;
+    if (estado === 'historial' && !HIST.includes(d.ESTADO_NORMALIZADO)) return false;
+    return true;
+  });
+}
+
+// ── CARGA DE DATOS ────────────────────────────────────────────────────────────
+async function cargarDatos() {
+  document.getElementById('loading').classList.remove('hidden');
+  document.getElementById('sync-btn').textContent = 'CARGANDO...';
+  try {
+    const res  = await fetch(APPS_SCRIPT_URL);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    allData = json.data;
+
+    // Poblar filtro años
+    const years = [...new Set(allData.map(d=>getYear(d.ETA)).filter(Boolean))].sort((a,b)=>b-a);
+    const sel = document.getElementById('f-year');
+    sel.innerHTML = '<option value="TODOS">Todos los años</option>';
+    years.forEach(y => sel.innerHTML += `<option value="${y}">${y}</option>`);
+
+    const now = new Date();
+    lastSync = `${now.toLocaleDateString('es-AR')} ${now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
+    document.getElementById('sync-status').textContent = `Act. ${lastSync}`;
+    document.getElementById('total-ops').textContent = `${allData.length} ops.`;
+
+    renderAll();
+  } catch(e) {
+    alert('Error cargando datos: ' + e.message);
+  } finally {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('sync-btn').textContent = '↻ ACTUALIZAR';
+  }
+}
+
+// ── RENDER PRINCIPAL ──────────────────────────────────────────────────────────
+function renderAll() {
+  const datos = getDatos();
+  renderKpis(datos);
+  renderVolumen(datos);
+  renderEmpresaOrigen(datos);
+  renderRankings(datos);
+  renderOperativo(datos);
+  document.getElementById('footer-info').textContent =
+    `${datos.length} operaciones · Fuente: Google Sheets · ${lastSync}`;
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+function renderKpis(datos) {
+  const totalUSD  = datos.reduce((a,d)=>a+(Number(d.MONTO)||0),0);
+  const totalCont = datos.reduce((a,d)=>a+(Number(d.Q_CONTENEDORES)||0),0);
+  const HIST      = ['ENTREGADO','ENTREGADO A CLIENTE','CERRADO','NACIONALIZADO'];
+  const activos   = datos.filter(d=>!HIST.includes(d.ESTADO_NORMALIZADO)).length;
+
+  const transitos = datos.map(d=>diffDias(d.ETD,d.ETA)).filter(x=>x&&x>0&&x<120);
+  const avgTransito = transitos.length ? Math.round(transitos.reduce((a,b)=>a+b,0)/transitos.length) : null;
+
+  const proveedores = new Set(datos.map(d=>d.PROVEEDOR).filter(Boolean)).size;
+  const origenes    = new Set(datos.map(d=>d.ORIGEN).filter(Boolean)).size;
+
+  const kpis = [
+    {label:'Operaciones',      value:fmtNum(datos.length),    sub:'en el período', color:'red'},
+    {label:'Activas',          value:fmtNum(activos),         sub:'en curso',      color:'orange'},
+    {label:'USD importado',    value:fmtUSD(totalUSD),        sub:'valor FOB/CIF', color:'blue'},
+    {label:'Contenedores',     value:fmtNum(totalCont),       sub:'total período', color:'green'},
+    {label:'Tránsito promedio',value:avgTransito?`${avgTransito}d`:'N/D', sub:'ETD → ETA', color:'yellow'},
+    {label:'Proveedores',      value:fmtNum(proveedores),     sub:`de ${origenes} orígenes`, color:''},
+  ];
+
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k=>`
+    <div class="kpi-card ${k.color}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+}
+
+// ── VOLUMEN ───────────────────────────────────────────────────────────────────
+function renderVolumen(datos) {
+  const byPeriodo = {};
+  datos.forEach(d => {
+    const k = getPeriodoKey(d.ETA);
+    if (!k) return;
+    if (!byPeriodo[k]) byPeriodo[k] = {ops:0, usd:0};
+    byPeriodo[k].ops++;
+    byPeriodo[k].usd += Number(d.MONTO)||0;
+  });
+  const keys = Object.keys(byPeriodo).sort();
+
+  renderBar('chart-ops', keys, keys.map(k=>byPeriodo[k].ops), '#CC0000', 'Operaciones');
+  renderBar('chart-usd', keys, keys.map(k=>Math.round(byPeriodo[k].usd/1000)), '#1D4ED8', 'USD (miles)');
+}
+
+// ── EMPRESA Y ORIGEN ──────────────────────────────────────────────────────────
+function renderEmpresaOrigen(datos) {
+  // Por empresa
+  const byEmp = {};
+  datos.forEach(d => {
+    const e = d.EMPRESA||'S/D';
+    byEmp[e] = (byEmp[e]||0) + (Number(d.MONTO)||0);
+  });
+  const empKeys = Object.keys(byEmp).sort((a,b)=>byEmp[b]-byEmp[a]);
+  renderDoughnut('chart-empresa', empKeys.map(k=>{
+    const short = k.includes('MINERIA')?'L. Minería':k.includes('SALTA')?'L. Salta':'L. Neumáticos';
+    return short;
+  }), empKeys.map(k=>Math.round(byEmp[k])), empKeys.map(k=>EMP_COLOR[k]||'#999'));
+
+  // Por origen
+  const byOrig = {};
+  datos.forEach(d => { const o=d.ORIGEN||'S/D'; byOrig[o]=(byOrig[o]||0)+1; });
+  const origKeys = Object.keys(byOrig).sort((a,b)=>byOrig[b]-byOrig[a]).slice(0,8);
+  renderDoughnut('chart-origen', origKeys, origKeys.map(k=>byOrig[k]), PALETTE);
+
+  // Por terminal
+  const byTerm = {};
+  datos.forEach(d => {
+    const t = d.TERMINAL||'S/D';
+    byTerm[t] = (byTerm[t]||0) + (Number(d.Q_CONTENEDORES)||0);
+  });
+  const termKeys = Object.keys(byTerm).filter(k=>k&&k!=='S/D').sort((a,b)=>byTerm[b]-byTerm[a]).slice(0,8);
+  if (termKeys.length > 0) {
+    renderDoughnut('chart-terminal', termKeys, termKeys.map(k=>byTerm[k]), PALETTE.slice(2));
+  } else {
+    renderDoughnut('chart-terminal', ['Sin datos'], [1], ['#E8E8E8']);
+  }
+}
+
+// ── RANKINGS ──────────────────────────────────────────────────────────────────
+function renderRankings(datos) {
+  // Proveedores
+  const byProv = {};
+  datos.forEach(d => {
+    const p = (d.PROVEEDOR||'S/D').split(' ').slice(0,3).join(' ');
+    if (!byProv[p]) byProv[p] = {usd:0, ops:0};
+    byProv[p].usd += Number(d.MONTO)||0;
+    byProv[p].ops++;
+  });
+  const provs = Object.entries(byProv).sort((a,b)=>b[1].usd-a[1].usd).slice(0,8);
+  const maxUSD = provs[0]?.[1]?.usd||1;
+  document.getElementById('rank-proveedores').innerHTML = `
+    <table class="rank-table">
+      <tr><th>#</th><th>Proveedor</th><th style="text-align:right">USD</th><th style="text-align:right">Ops</th></tr>
+      ${provs.map(([p,v],i)=>`
+        <tr>
+          <td class="rank-num">${i+1}</td>
+          <td><div style="font-size:12px;font-weight:600;color:#333">${p}</div>
+              <div class="rank-bar-wrap"><div class="rank-bar" style="width:${Math.round(v.usd/maxUSD*100)}%"></div></div></td>
+          <td style="text-align:right"><span class="rank-usd">${fmtUSD(v.usd)}</span></td>
+          <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:#888">${v.ops}</td>
+        </tr>`).join('')}
+    </table>`;
+
+  // Forwarders
+  const byFw = {};
+  datos.forEach(d => {
+    const f = d.FORWARDER_NORMALIZADO||d.FORWARDER_ORIGEN||'S/D';
+    if (!f||f==='S/D') return;
+    if (!byFw[f]) byFw[f] = {ops:0, dias:[]};
+    byFw[f].ops++;
+    const t = diffDias(d.ETD, d.ETA);
+    if (t&&t>0&&t<120) byFw[f].dias.push(t);
+  });
+  const fws = Object.entries(byFw).sort((a,b)=>b[1].ops-a[1].ops).slice(0,8);
+  const maxOps = fws[0]?.[1]?.ops||1;
+  document.getElementById('rank-forwarders').innerHTML = `
+    <table class="rank-table">
+      <tr><th>#</th><th>Forwarder</th><th style="text-align:right">Ops</th><th style="text-align:right">Días prom.</th></tr>
+      ${fws.map(([f,v],i)=>{
+        const avg = v.dias.length ? Math.round(v.dias.reduce((a,b)=>a+b,0)/v.dias.length) : null;
+        return `<tr>
+          <td class="rank-num">${i+1}</td>
+          <td><div style="font-size:12px;font-weight:600;color:#333">${f}</div>
+              <div class="rank-bar-wrap"><div class="rank-bar blue" style="width:${Math.round(v.ops/maxOps*100)}%"></div></div></td>
+          <td style="text-align:right;font-family:'DM Mono',monospace;font-size:12px;font-weight:700">${v.ops}</td>
+          <td style="text-align:right;font-family:'DM Mono',monospace;font-size:11px;color:${avg?avg>35?'#CC0000':avg>25?'#F97316':'#22C55E':'#CCC'}">${avg?avg+'d':'N/D'}</td>
+        </tr>`;}).join('')}
+    </table>`;
+}
+
+// ── OPERATIVO ─────────────────────────────────────────────────────────────────
+function renderOperativo(datos) {
+  // Canal
+  const canales = {VERDE:0, NARANJA:0, ROJO:0, ND:0};
+  datos.forEach(d => {
+    const c = (d.CANAL||'').toUpperCase().trim();
+    if (c.includes('VERDE'))   canales.VERDE++;
+    else if (c.includes('NAR')) canales.NARANJA++;
+    else if (c.includes('ROJ')) canales.ROJO++;
+    else canales.ND++;
+  });
+  const total = datos.length||1;
+  document.getElementById('rank-canal').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px;padding:4px 0">
+      ${[
+        {label:'Canal Verde',   val:canales.VERDE,   pct:Math.round(canales.VERDE/total*100),   cls:'canal-verde',   bar:'#22C55E'},
+        {label:'Canal Naranja', val:canales.NARANJA, pct:Math.round(canales.NARANJA/total*100), cls:'canal-naranja',  bar:'#F97316'},
+        {label:'Canal Rojo',    val:canales.ROJO,    pct:Math.round(canales.ROJO/total*100),    cls:'canal-rojo',     bar:'#CC0000'},
+        {label:'Sin datos',     val:canales.ND,      pct:Math.round(canales.ND/total*100),      cls:'canal-nd',       bar:'#E8E8E8'},
+      ].map(c=>`
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span class="canal-pill ${c.cls}">${c.label}</span>
+            <span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:#333">${c.val} <span style="color:#AAA;font-weight:400">(${c.pct}%)</span></span>
+          </div>
+          <div class="rank-bar-wrap"><div class="rank-bar" style="width:${c.pct}%;background:${c.bar}"></div></div>
+        </div>`).join('')}
+    </div>`;
+
+  // Tránsito por período
+  const byPer = {};
+  datos.forEach(d => {
+    const k = getPeriodoKey(d.ETA);
+    const t = diffDias(d.ETD, d.ETA);
+    if (!k||!t||t<=0||t>120) return;
+    if (!byPer[k]) byPer[k] = [];
+    byPer[k].push(t);
+  });
+  const perKeys = Object.keys(byPer).sort();
+  const avgDias = perKeys.map(k=>Math.round(byPer[k].reduce((a,b)=>a+b,0)/byPer[k].length));
+  renderBar('chart-transito', perKeys, avgDias, '#8B5CF6', 'Días promedio');
+
+  // Contenedores por período
+  const byCont = {};
+  datos.forEach(d => {
+    const k = getPeriodoKey(d.ETA);
+    if (!k) return;
+    byCont[k] = (byCont[k]||0) + (Number(d.Q_CONTENEDORES)||0);
+  });
+  const contKeys = Object.keys(byCont).sort();
+  renderBar('chart-cont', contKeys, contKeys.map(k=>byCont[k]), '#22C55E', 'Contenedores');
+}
+
+// ── CHART HELPERS ─────────────────────────────────────────────────────────────
+function renderBar(id, labels, data, color, label) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label, data, backgroundColor: color+'CC', borderColor: color, borderWidth: 1, borderRadius: 4 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 9 }, color: '#999', maxRotation: 45 } },
+        y: { grid: { color: '#F0F0F0' }, ticks: { font: { family: 'DM Mono', size: 9 }, color: '#999' } },
+      },
+    }
+  });
+}
+
+function renderDoughnut(id, labels, data, colors) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id).getContext('2d');
+  const cols = Array.isArray(colors) ? (colors.length >= labels.length ? colors : PALETTE) : PALETTE;
+  charts[id] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: cols.map(c=>c+'DD'), borderColor: '#fff', borderWidth: 2 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: 'DM Mono', size: 9 }, color: '#666', padding: 8, boxWidth: 10 } },
+      },
+      cutout: '60%',
+    }
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+cargarDatos();
+</script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Larocca · Centro Comex</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Barlow', sans-serif; background: #F4F4F4; height: 100vh; overflow: hidden; }
+
+    #portal  { display: flex; flex-direction: column; height: 100vh; }
+    #topbar  { background: #CC0000; height: 48px; display: flex; align-items: center; padding: 0 16px; gap: 12px; flex-shrink: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+    #main    { display: flex; flex: 1; overflow: hidden; }
+    #sidebar { width: 210px; background: #fff; border-right: 1px solid #E8E8E8; display: flex; flex-direction: column; flex-shrink: 0; transition: width .25s ease, opacity .2s ease; overflow: hidden; }
+    #sidebar.hidden { width: 0; opacity: 0; }
+    #content { flex: 1; display: flex; overflow: hidden; }
+
+    /* TOPBAR */
+    .logo-line { width: 3px; height: 28px; background: rgba(255,255,255,.35); border-radius: 2px; }
+    .logo-sub  { font-family: 'DM Mono', monospace; font-size: 7px; color: rgba(255,255,255,.55); letter-spacing: 3px; }
+    .logo-main { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: #fff; letter-spacing: 1px; line-height: 1; }
+
+    /* Botón hamburguesa */
+    #menu-toggle {
+      background: rgba(255,255,255,.15); border: none; border-radius: 6px;
+      width: 32px; height: 32px; cursor: pointer; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 4px; flex-shrink: 0;
+      transition: background .12s;
+    }
+    #menu-toggle:hover { background: rgba(255,255,255,.25); }
+    #menu-toggle span { width: 16px; height: 2px; background: #fff; border-radius: 2px; transition: all .2s; display: block; }
+
+    /* Breadcrumb en topbar */
+    #topbar-breadcrumb { font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(255,255,255,.6); margin-left: 4px; }
+    #topbar-breadcrumb strong { color: #fff; font-weight: 700; }
+
+    /* Botón volver en topbar */
+    #btn-volver {
+      display: none; margin-left: auto; background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.25); border-radius: 6px;
+      padding: 5px 12px; font-family: 'DM Mono', monospace; font-size: 9px;
+      font-weight: 700; color: #fff; cursor: pointer; letter-spacing: .5px;
+      transition: background .12s;
+    }
+    #btn-volver:hover { background: rgba(255,255,255,.25); }
+    #btn-volver.visible { display: block; }
+
+    /* SIDEBAR */
+    .sidebar-header { padding: 16px 14px 10px; border-bottom: 1px solid #F0F0F0; white-space: nowrap; }
+    .sidebar-title  { font-family: 'DM Mono', monospace; font-size: 7px; color: #CCC; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 3px; }
+    .sidebar-name   { font-size: 12px; font-weight: 600; color: #333; }
+
+    .nav-section { padding: 10px 0; }
+    .nav-label   { font-family: 'DM Mono', monospace; font-size: 7px; color: #CCC; letter-spacing: 2px; padding: 0 14px 6px; text-transform: uppercase; white-space: nowrap; }
+
+    .nav-btn {
+      width: 100%; display: flex; align-items: center; gap: 10px;
+      padding: 9px 14px; border: none; background: transparent;
+      cursor: pointer; transition: all .12s; text-align: left;
+      border-left: 3px solid transparent; white-space: nowrap;
+    }
+    .nav-btn:hover { background: #F7F7F7; }
+    .nav-btn.active-red  { background: #FFF5F5; border-left-color: #CC0000; }
+    .nav-btn.active-blue { background: #EFF6FF; border-left-color: #1D4ED8; }
+    .nav-btn.active-gray { background: #F7F7F7; border-left-color: #666; }
+
+    .nav-icon { width: 30px; height: 30px; border-radius: 7px; background: #F0F0F0; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+    .nav-btn-label { font-size: 12px; font-weight: 600; color: #333; }
+    .nav-btn-sub   { font-size: 9px; color: #AAA; margin-top: 1px; font-family: 'DM Mono', monospace; }
+
+    .sidebar-footer { margin-top: auto; padding: 10px 14px; border-top: 1px solid #F0F0F0; white-space: nowrap; }
+    .sf-label { font-family: 'DM Mono', monospace; font-size: 7px; color: #DDD; letter-spacing: 1px; }
+    .sf-val   { font-size: 10px; color: #BBB; margin-top: 2px; }
+
+    /* HOME */
+    #home-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; overflow-y: auto; }
+    .home-inner { max-width: 800px; width: 100%; }
+    .home-eyebrow { font-family: 'DM Mono', monospace; font-size: 9px; color: #CC0000; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+    .home-title { font-family: 'Bebas Neue', sans-serif; font-size: 52px; color: #111; letter-spacing: 1px; line-height: 1; margin-bottom: 8px; }
+    .home-sub   { font-size: 14px; color: #999; margin-bottom: 36px; }
+
+    .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+
+    .tool-card {
+      background: #fff; border: 1px solid #E8E8E8; border-radius: 12px;
+      padding: 22px; cursor: pointer; transition: all .15s;
+      border-top: 4px solid #E8E8E8; position: relative; overflow: hidden;
+    }
+    .tool-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.1); transform: translateY(-2px); }
+    .tool-card.red-card  { border-top-color: #CC0000; }
+    .tool-card.blue-card { border-top-color: #1D4ED8; }
+    .tool-card.gray-card { border-top-color: #94A3B8; }
+    .tool-card.coming    { opacity: .6; cursor: default; }
+    .tool-card.coming:hover { transform: none; box-shadow: none; }
+
+    .card-badge { position: absolute; top: 14px; right: 14px; font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+    .badge-soon { background: #F1F5F9; color: #94A3B8; border: 1px solid #E2E8F0; }
+
+    .card-icon  { font-size: 32px; margin-bottom: 12px; }
+    .card-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: #111; letter-spacing: .5px; margin-bottom: 5px; line-height: 1; }
+    .card-desc  { font-size: 12px; color: #777; line-height: 1.5; margin-bottom: 12px; }
+    .card-tags  { display: flex; gap: 4px; flex-wrap: wrap; }
+    .tag { font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 3px; }
+    .tag-red  { color: #CC0000; background: #FFF5F5; border: 1px solid #FFCCCC; }
+    .tag-blue { color: #1D4ED8; background: #EFF6FF; border: 1px solid #BFDBFE; }
+    .tag-gray { color: #64748B; background: #F1F5F9; border: 1px solid #E2E8F0; }
+
+    /* IFRAME */
+    .iframe-panel { flex: 1; display: none; flex-direction: column; }
+    .iframe-panel.visible { display: flex; }
+    iframe { flex: 1; border: none; width: 100%; display: block; }
+
+    /* DIVIDER SIDEBAR */
+    .nav-divider { height: 1px; background: #F0F0F0; margin: 4px 14px; }
+  </style>
+</head>
+<body>
+<div id="portal">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <button id="menu-toggle" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="logo-line"></div>
+    <div>
+      <div class="logo-sub">Larocca · Comex</div>
+      <div class="logo-main">CENTRO DE TRABAJO</div>
+    </div>
+    <div id="topbar-breadcrumb"></div>
+    <button id="btn-volver" onclick="showPanel('home')">← Volver al inicio</button>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Área</div>
+        <div class="sidebar-name">Comercio Exterior</div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Navegación</div>
+
+        <button class="nav-btn" id="btn-home" onclick="showPanel('home')">
+          <div class="nav-icon">🏠</div>
+          <div>
+            <div class="nav-btn-label">Inicio</div>
+            <div class="nav-btn-sub">Panel principal</div>
+          </div>
+        </button>
+
+        <div class="nav-divider"></div>
+        <div class="nav-label" style="margin-top:8px">Herramientas</div>
+
+        <button class="nav-btn" id="btn-tracker" onclick="showPanel('tracker')">
+          <div class="nav-icon">🚢</div>
+          <div>
+            <div class="nav-btn-label">Tracker</div>
+            <div class="nav-btn-sub">Importaciones</div>
+          </div>
+        </button>
+
+        <button class="nav-btn" id="btn-calc" onclick="showPanel('calc')">
+          <div class="nav-icon">🧮</div>
+          <div>
+            <div class="nav-btn-label">Coeficiente</div>
+            <div class="nav-btn-sub">Nacionalización</div>
+          </div>
+        </button>
+
+        <div class="nav-divider"></div>
+        <div class="nav-label" style="margin-top:8px">Próximamente</div>
+
+        <button class="nav-btn" id="btn-kpis" onclick="showPanel('kpis')">
+          <div class="nav-icon">📊</div>
+          <div>
+            <div class="nav-btn-label">KPIs</div>
+            <div class="nav-btn-sub">Análisis y reportes</div>
+          </div>
+        </button>
+
+        <button class="nav-btn" style="opacity:.5;cursor:default">
+          <div class="nav-icon">💰</div>
+          <div>
+            <div class="nav-btn-label">Liquidación</div>
+            <div class="nav-btn-sub">Próximamente</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sf-label">VERSIÓN</div>
+        <div class="sf-val">Portal Comex v1.0</div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div id="content">
+
+      <!-- HOME -->
+      <div id="home-panel">
+        <div class="home-inner">
+          <div class="home-eyebrow">Larocca · Comercio Exterior</div>
+          <div class="home-title">Centro de<br/>Trabajo Comex</div>
+          <div class="home-sub">Seleccioná una herramienta para comenzar.</div>
+
+          <div class="cards-grid">
+
+            <div class="tool-card red-card" onclick="showPanel('tracker')">
+              <div class="card-icon">🚢</div>
+              <div class="card-title">Tracker de Importaciones</div>
+              <div class="card-desc">Estado en tiempo real de todos los embarques. SKUs, documentos y notas por operación.</div>
+              <div class="card-tags">
+                <span class="tag tag-red">En tránsito</span>
+                <span class="tag tag-red">Aduana</span>
+                <span class="tag tag-red">SKUs</span>
+              </div>
+            </div>
+
+            <div class="tool-card blue-card" onclick="showPanel('calc')">
+              <div class="card-icon">🧮</div>
+              <div class="card-title">Calculadora de Coeficiente</div>
+              <div class="card-desc">Liquidación completa de costos de nacionalización. Coeficiente y precio de venta base.</div>
+              <div class="card-tags">
+                <span class="tag tag-blue">Coeficiente</span>
+                <span class="tag tag-blue">Tributos</span>
+                <span class="tag tag-blue">PDF / Excel</span>
+              </div>
+            </div>
+
+            <div class="tool-card gray-card coming">
+              <div class="card-badge badge-soon">PRÓXIMAMENTE</div>
+              <div class="card-icon">💰</div>
+              <div class="card-title">Liquidación de Costos</div>
+              <div class="card-desc">Costo landed por embarque sumando flete, despachante, aranceles y percepciones AFIP.</div>
+              <div class="card-tags">
+                <span class="tag tag-gray">Costo landed</span>
+                <span class="tag tag-gray">AFIP</span>
+                <span class="tag tag-gray">Margen</span>
+              </div>
+            </div>
+
+            <div class="tool-card red-card" onclick="showPanel('kpis')">
+              <div class="card-icon">📊</div>
+              <div class="card-title">KPIs & Análisis</div>
+              <div class="card-desc">Operaciones, USD importado, tránsito, canales aduaneros y rankings por proveedor y forwarder.</div>
+              <div class="card-tags">
+                <span class="tag tag-red">Rankings</span>
+                <span class="tag tag-red">Canales</span>
+                <span class="tag tag-red">Tendencias</span>
+              </div>
+            </div>
+
+            <div class="tool-card gray-card coming">
+              <div class="card-badge badge-soon">PRÓXIMAMENTE</div>
+              <div class="card-icon">🔔</div>
+              <div class="card-title">Alertas y Vencimientos</div>
+              <div class="card-desc">Notificaciones de ETA próxima, documentos faltantes y pagos pendientes por embarque.</div>
+              <div class="card-tags">
+                <span class="tag tag-gray">ETA</span>
+                <span class="tag tag-gray">Documentos</span>
+                <span class="tag tag-gray">Pagos</span>
+              </div>
+            </div>
+
+            <div class="tool-card gray-card coming">
+              <div class="card-badge badge-soon">PRÓXIMAMENTE</div>
+              <div class="card-icon">📁</div>
+              <div class="card-title">Gestión Documental</div>
+              <div class="card-desc">BL, factura comercial y packing list vinculados a cada embarque. Acceso directo desde Drive.</div>
+              <div class="card-tags">
+                <span class="tag tag-gray">BL</span>
+                <span class="tag tag-gray">Factura</span>
+                <span class="tag tag-gray">Drive</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- TRACKER iframe -->
+      <div class="iframe-panel" id="tracker-panel">
+        <iframe id="tracker-frame" src="" title="Tracker de Importaciones" allowfullscreen></iframe>
+      </div>
+
+      <!-- KPIs -->
+      <div class="iframe-panel" id="kpis-panel">
+        <iframe id="kpis-frame" src="" title="KPIs Comex" allowfullscreen></iframe>
+      </div>
+
+      <!-- CALCULADORA iframe -->
+      <div class="iframe-panel" id="calc-panel">
+        <iframe id="calc-frame" src="" title="Calculadora de Coeficiente" allowfullscreen></iframe>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const iframesLoaded = {};
+  let sidebarVisible = true;
+  let currentPanel = 'home';
+
+  function toggleSidebar() {
+    sidebarVisible = !sidebarVisible;
+    document.getElementById('sidebar').classList.toggle('hidden', !sidebarVisible);
+  }
+
+  function showPanel(panel) {
+    // Ocultar todo
+    document.getElementById('home-panel').style.display = 'none';
+    document.querySelectorAll('.iframe-panel').forEach(p => p.classList.remove('visible'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-red','active-blue','active-gray'));
+
+    const breadcrumb = document.getElementById('topbar-breadcrumb');
+    const btnVolver  = document.getElementById('btn-volver');
+
+    if (panel === 'home') {
+      document.getElementById('home-panel').style.display = 'flex';
+      document.getElementById('btn-home').classList.add('active-gray');
+      breadcrumb.innerHTML = '';
+      btnVolver.classList.remove('visible');
+      // Mostrar sidebar al volver al home
+      sidebarVisible = true;
+      document.getElementById('sidebar').classList.remove('hidden');
+    }
+
+    else if (panel === 'tracker') {
+      document.getElementById('tracker-panel').classList.add('visible');
+      document.getElementById('btn-tracker').classList.add('active-red');
+      breadcrumb.innerHTML = '/ <strong>Tracker de Importaciones</strong>';
+      btnVolver.classList.add('visible');
+      // Ocultar sidebar para maximizar espacio
+      sidebarVisible = false;
+      document.getElementById('sidebar').classList.add('hidden');
+      // Cargar iframe solo la primera vez
+      if (!iframesLoaded['tracker']) {
+        document.getElementById('tracker-frame').src = 'https://larocca-tracker.vercel.app';
+        iframesLoaded['tracker'] = true;
+      }
+    }
+
+    else if (panel === 'kpis') {
+      document.getElementById('kpis-panel').classList.add('visible');
+      document.getElementById('btn-kpis').classList.add('active-red');
+      breadcrumb.innerHTML = '/ <strong>KPIs & Análisis</strong>';
+      btnVolver.classList.add('visible');
+      sidebarVisible = false;
+      document.getElementById('sidebar').classList.add('hidden');
+      if (!iframesLoaded['kpis']) {
+        document.getElementById('kpis-frame').src = 'larocca-kpis.html';
+        iframesLoaded['kpis'] = true;
+      }
+    }
+
+    else if (panel === 'calc') {
+      document.getElementById('calc-panel').classList.add('visible');
+      document.getElementById('btn-calc').classList.add('active-blue');
+      breadcrumb.innerHTML = '/ <strong>Calculadora de Coeficiente</strong>';
+      btnVolver.classList.add('visible');
+      // Ocultar sidebar para maximizar espacio
+      sidebarVisible = false;
+      document.getElementById('sidebar').classList.add('hidden');
+      if (!iframesLoaded['calc']) {
+        document.getElementById('calc-frame').src = 'https://florenciapiera-svg.github.io/calculadora-coeficiente/';
+        iframesLoaded['calc'] = true;
+      }
+    }
+
+    currentPanel = panel;
+  }
+
+  // Iniciar
+  showPanel('home');
+</script>
+</body>
+</html>
