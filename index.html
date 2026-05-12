@@ -185,18 +185,18 @@
           </div>
         </button>
 
-        <button class="nav-btn" style="opacity:.5;cursor:default">
+        <button class="nav-btn" id="btn-liquidacion" onclick="showPanel('liquidacion')">
           <div class="nav-icon">💰</div>
           <div>
             <div class="nav-btn-label">Liquidación</div>
-            <div class="nav-btn-sub">Próximamente</div>
+            <div class="nav-btn-sub">Depósito MARIA</div>
           </div>
         </button>
       </div>
 
       <div class="sidebar-footer">
         <div class="sf-label">VERSIÓN</div>
-        <div class="sf-val">Portal Comex v1.0</div>
+        <div class="sf-val">Portal Comex v1.1</div>
       </div>
     </div>
 
@@ -234,15 +234,14 @@
               </div>
             </div>
 
-            <div class="tool-card gray-card coming">
-              <div class="card-badge badge-soon">PRÓXIMAMENTE</div>
+            <div class="tool-card blue-card" onclick="showPanel('liquidacion')">
               <div class="card-icon">💰</div>
               <div class="card-title">Liquidación de Costos</div>
               <div class="card-desc">Costo landed por embarque sumando flete, despachante, aranceles y percepciones AFIP.</div>
               <div class="card-tags">
-                <span class="tag tag-gray">Costo landed</span>
-                <span class="tag tag-gray">AFIP</span>
-                <span class="tag tag-gray">Margen</span>
+                <span class="tag tag-blue">Depósito MARIA</span>
+                <span class="tag tag-blue">Tributos</span>
+                <span class="tag tag-blue">Mercosur</span>
               </div>
             </div>
 
@@ -298,6 +297,11 @@
       <!-- CALCULADORA iframe -->
       <div class="iframe-panel" id="calc-panel">
         <iframe id="calc-frame" src="" title="Calculadora de Coeficiente" allowfullscreen></iframe>
+      </div>
+
+      <!-- LIQUIDACIÓN iframe -->
+      <div class="iframe-panel" id="liquidacion-panel">
+        <iframe id="liquidacion-frame" src="" title="Liquidación — Depósito MARIA" allowfullscreen></iframe>
       </div>
 
     </div>
@@ -372,6 +376,19 @@
       if (!iframesLoaded['calc']) {
         document.getElementById('calc-frame').src = 'https://florenciapiera-svg.github.io/calculadora-coeficiente/';
         iframesLoaded['calc'] = true;
+      }
+    }
+
+    else if (panel === 'liquidacion') {
+      document.getElementById('liquidacion-panel').classList.add('visible');
+      document.getElementById('btn-liquidacion').classList.add('active-blue');
+      breadcrumb.innerHTML = '/ <strong>Liquidación — Depósito MARIA</strong>';
+      btnVolver.classList.add('visible');
+      sidebarVisible = false;
+      document.getElementById('sidebar').classList.add('hidden');
+      if (!iframesLoaded['liquidacion']) {
+        document.getElementById('liquidacion-frame').src = 'liquidacion-maria-larocca.html';
+        iframesLoaded['liquidacion'] = true;
       }
     }
 
