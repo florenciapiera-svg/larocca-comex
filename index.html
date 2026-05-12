@@ -115,6 +115,35 @@
  
     /* DIVIDER SIDEBAR */
     .nav-divider { height: 1px; background: #F0F0F0; margin: 4px 14px; }
+ 
+    /* TC WIDGET */
+    .tc-bar {
+      display: flex; align-items: stretch;
+      background: #fff; border: 1px solid #E8E8E8; border-radius: 10px;
+      margin-bottom: 24px; overflow: hidden; flex-wrap: wrap;
+    }
+    .tc-source {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; border-right: 1px solid #F0F0F0; flex: 1; min-width: 180px;
+    }
+    .tc-source-icon { font-size: 20px; flex-shrink: 0; }
+    .tc-source-body { display: flex; flex-direction: column; }
+    .tc-source-label { font-family: 'DM Mono', monospace; font-size: 7px; color: #AAA; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; }
+    .tc-rates { display: flex; gap: 16px; }
+    .tc-rate { display: flex; flex-direction: column; }
+    .tc-rate-lbl { font-family: 'DM Mono', monospace; font-size: 7px; color: #CCC; }
+    .tc-rate-val { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; color: #111; line-height: 1; }
+    .tc-meta {
+      padding: 10px 16px; display: flex; flex-direction: column;
+      justify-content: center; align-items: flex-end; gap: 6px; flex-shrink: 0;
+    }
+    .tc-timestamp { font-family: 'DM Mono', monospace; font-size: 8px; color: #BBB; display: flex; align-items: center; gap: 5px; }
+    .tc-dot { width: 6px; height: 6px; border-radius: 50%; background: #22C55E; animation: tcpulse 2s infinite; }
+    @keyframes tcpulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .tc-links { display: flex; gap: 6px; }
+    .tc-link { font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 700; color: #CC0000; text-decoration: none; padding: 2px 8px; border: 1px solid #FFCCCC; border-radius: 4px; transition: background .12s; }
+    .tc-link:hover { background: #FFF5F5; }
+    .tc-skeleton { color: #DDD; font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -205,7 +234,7 @@
  
       <div class="sidebar-footer">
         <div class="sf-label">VERSIÓN</div>
-        <div class="sf-val">Portal Comex v1.2</div>
+        <div class="sf-val">Portal Comex v1.3</div>
       </div>
     </div>
  
@@ -218,6 +247,52 @@
           <div class="home-eyebrow">Larocca · Comercio Exterior</div>
           <div class="home-title">Centro de<br/>Trabajo Comex</div>
           <div class="home-sub">Seleccioná una herramienta para comenzar.</div>
+ 
+          <!-- TC WIDGET -->
+          <div class="tc-bar">
+            <div class="tc-source">
+              <div class="tc-source-icon">🏦</div>
+              <div class="tc-source-body">
+                <div class="tc-source-label">BNA — Dólar Oficial</div>
+                <div class="tc-rates">
+                  <div class="tc-rate">
+                    <span class="tc-rate-lbl">COMPRA</span>
+                    <span class="tc-rate-val tc-skeleton" id="bna-compra">···</span>
+                  </div>
+                  <div class="tc-rate">
+                    <span class="tc-rate-lbl">VENTA</span>
+                    <span class="tc-rate-val tc-skeleton" id="bna-venta">···</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tc-source">
+              <div class="tc-source-icon">📋</div>
+              <div class="tc-source-body">
+                <div class="tc-source-label">BCRA — Ref. Aduana (CDA)</div>
+                <div class="tc-rates">
+                  <div class="tc-rate">
+                    <span class="tc-rate-lbl">COMPRA</span>
+                    <span class="tc-rate-val tc-skeleton" id="bcra-compra">···</span>
+                  </div>
+                  <div class="tc-rate">
+                    <span class="tc-rate-lbl">VENTA</span>
+                    <span class="tc-rate-val tc-skeleton" id="bcra-venta">···</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tc-meta">
+              <div class="tc-timestamp">
+                <span class="tc-dot"></span>
+                <span id="tc-hora">Actualizando...</span>
+              </div>
+              <div class="tc-links">
+                <a href="https://www.cda.org.ar/" target="_blank" class="tc-link">CDA ↗</a>
+                <a href="https://www.bna.com.ar/Personas" target="_blank" class="tc-link">BNA ↗</a>
+              </div>
+            </div>
+          </div>
  
           <div class="cards-grid">
  
@@ -423,6 +498,37 @@
     window.open('https://www.appsheet.com/start/b743d675-76d4-44c0-bacf-2625f6ac18bd?platform=desktop#appName=SistemadeValidaci%C3%B3nComex-585860185-26-03-29&view=Menu', '_blank');
   }
  
+  // ── COTIZACIÓN TC ──────────────────────────────────────
+  const fmtTC = v => v ? '$' + Number(v).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+ 
+  async function fetchTC() {
+    try {
+      const [rBNA, rBCRA] = await Promise.all([
+        fetch('https://dolarapi.com/v1/dolares/oficial').then(r => r.json()),
+        fetch('https://dolarapi.com/v1/dolares/mayorista').then(r => r.json())
+      ]);
+ 
+      document.getElementById('bna-compra').textContent  = fmtTC(rBNA.compra);
+      document.getElementById('bna-venta').textContent   = fmtTC(rBNA.venta);
+      document.getElementById('bcra-compra').textContent = fmtTC(rBCRA.compra);
+      document.getElementById('bcra-venta').textContent  = fmtTC(rBCRA.venta);
+ 
+      ['bna-compra','bna-venta','bcra-compra','bcra-venta'].forEach(id => {
+        document.getElementById(id).classList.remove('tc-skeleton');
+      });
+ 
+      const now = new Date();
+      document.getElementById('tc-hora').textContent =
+        'Act. ' + now.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+    } catch(e) {
+      document.getElementById('tc-hora').textContent = 'Sin conexión';
+    }
+  }
+ 
+  fetchTC();
+  setInterval(fetchTC, 30 * 60 * 1000); // refresca cada 30 min
+ 
+  // ── NAVEGACIÓN ─────────────────────────────────────────
   // Iniciar
   showPanel('home');
 </script>
